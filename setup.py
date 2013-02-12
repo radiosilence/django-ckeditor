@@ -17,6 +17,7 @@ setup(
     packages = find_packages(exclude=['project',]),
     install_requires = [
         'Pillow',
+        'sorl-thumbnail>=11.12',
     ],
     include_package_data=True,
     exclude_package_data={

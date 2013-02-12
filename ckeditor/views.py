@@ -7,23 +7,18 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.template import RequestContext
+from django.views.decorators.csrf import csrf_exempt
 
-try:
-    from PIL import Image, ImageOps
-except ImportError:
-    import Image
-    import ImageOps
+from sorl.thumbnail import get_thumbnail
 
-try:
-    from django.views.decorators.csrf import csrf_exempt
-except ImportError:
-    # monkey patch this with a dummy decorator which just returns the
-    # same function (for compatability with pre-1.1 Djangos)
-    def csrf_exempt(fn):
-        return fn
-
-THUMBNAIL_SIZE = (75, 75)
-
+IMAGE_EXTS = [
+    'png',
+    'jpeg',
+    'bmp',
+    'jpg',
+    'gif',
+    'tga',
+]
 
 def get_available_name(name):
     """
@@ -42,26 +37,12 @@ def get_available_name(name):
     return name
 
 
-def get_thumb_filename(file_name):
+def get_thumb_url(file_name):
     """
     Generate thumb filename by adding _thumb to end of
     filename before . (if present)
     """
-    return '%s_thumb%s' % os.path.splitext(file_name)
-
-
-def create_thumbnail(filename):
-    image = Image.open(filename)
-
-    # Convert to RGB if necessary
-    # Thanks to Limodou on DjangoSnippets.org
-    # http://www.djangosnippets.org/snippets/20/
-    if image.mode not in ('L', 'RGB'):
-        image = image.convert('RGB')
-
-    # scale and crop to thumbnail
-    imagefit = ImageOps.fit(image, THUMBNAIL_SIZE, Image.ANTIALIAS)
-    imagefit.save(get_thumb_filename(filename))
+    return get_thumbnail(file_name, '75x75', crop='center', quality=100).url
 
 
 def get_media_url(path):
@@ -117,7 +98,6 @@ def upload(request):
     """
     # Get the uploaded file from request.
     upload = request.FILES['upload']
-    upload_ext = os.path.splitext(upload.name)[1]
 
     # Open output file in which to store upload.
     upload_filename = get_upload_filename(upload.name, request.user)
@@ -127,8 +107,6 @@ def upload(request):
     for chunk in upload.chunks():
         out.write(chunk)
     out.close()
-
-    create_thumbnail(upload_filename)
 
     # Respond with Javascript sending ckeditor upload url.
     url = get_media_url(upload_filename)
@@ -151,12 +129,12 @@ def get_image_files(user=None):
     else:
         user_path = ''
 
-    browse_path = os.path.join(settings.CKEDITOR_UPLOAD_PATH, user_path)
+    browse_path = unicode(
+        os.path.join(settings.CKEDITOR_UPLOAD_PATH, user_path))
 
     for root, dirs, files in os.walk(browse_path):
         for filename in [os.path.join(root, x) for x in files]:
-            # bypass for thumbs
-            if os.path.splitext(filename)[0].endswith('_thumb'):
+            if filename.split('.')[-1] not in IMAGE_EXTS:
                 continue
             yield filename
 
@@ -169,7 +147,7 @@ def get_image_browse_urls(user=None):
     images = []
     for filename in get_image_files(user=user):
         images.append({
-            'thumb': get_media_url(get_thumb_filename(filename)),
+            'thumb': get_thumb_url(filename),
             'src': get_media_url(filename)
         })
 
