@@ -42,7 +42,15 @@ def get_thumb_url(file_name):
     Generate thumb filename by adding _thumb to end of
     filename before . (if present)
     """
-    return get_thumbnail(file_name, '75x75', crop='center', quality=100).url
+    try:
+        return get_thumbnail(
+            file_name,
+            '75x75',
+            crop='center',
+            quality=100
+        ).url
+    except IOError:
+        return None
 
 
 def get_media_url(path):
@@ -129,8 +137,7 @@ def get_image_files(user=None):
     else:
         user_path = ''
 
-    browse_path = unicode(
-        os.path.join(settings.CKEDITOR_UPLOAD_PATH, user_path))
+    browse_path = os.path.join(settings.CKEDITOR_UPLOAD_PATH, user_path)
 
     for root, dirs, files in os.walk(browse_path):
         for filename in [os.path.join(root, x) for x in files]:
