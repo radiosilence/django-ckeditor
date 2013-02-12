@@ -42,15 +42,12 @@ def get_thumb_url(file_name):
     Generate thumb filename by adding _thumb to end of
     filename before . (if present)
     """
-    try:
-        return get_thumbnail(
-            file_name,
-            '75x75',
-            crop='center',
-            quality=100
-        ).url
-    except IOError:
-        return None
+    return get_thumbnail(
+        file_name,
+        '75x75',
+        crop='center',
+        quality=100
+    ).url
 
 
 def get_media_url(path):
@@ -153,10 +150,13 @@ def get_image_browse_urls(user=None):
     """
     images = []
     for filename in get_image_files(user=user):
-        images.append({
-            'thumb': get_thumb_url(filename),
-            'src': get_media_url(filename)
-        })
+        try:
+            images.append({
+                'thumb': get_thumb_url(filename),
+                'src': get_media_url(filename)
+            })
+        except IOError:
+            pass
 
     return images
 
