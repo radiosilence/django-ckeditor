@@ -1,4 +1,18 @@
 <textarea{{ final_attrs|safe }}>{{ value }}</textarea>
 <script type="text/javascript">
-    CKEDITOR.replace("{{ id }}", {{ config|safe }});
+{% if pos != -1 %}
+    setTimeout(function () {
+        var id = '{{ id }}';
+        var total = '{{ group }}TOTAL_FORMS';
+        var elements = id.replace(
+            /__prefix__/,
+            parseInt(document.getElementById('{{ group }}TOTAL_FORMS').value) - 1
+        );
+        if (document.getElementById(elements)) {
+            CKEDITOR.replace(elements, {{ config|safe }});
+        };
+    });
+{% else %}
+    CKEDITOR.replace('{{ id }}', {{ config|safe }});
+{% endif %}
 </script>

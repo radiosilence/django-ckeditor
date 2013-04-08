@@ -72,10 +72,13 @@ class CKEditorWidget(forms.Textarea):
         final_attrs = self.build_attrs(attrs, name=name)
         self.config['filebrowserUploadUrl'] = reverse('ckeditor_upload')
         self.config['filebrowserBrowseUrl'] = reverse('ckeditor_browse')
+        pos = final_attrs['id'].find('__prefix__')
         return mark_safe(render_to_string('ckeditor/widget.html', {
             'final_attrs': flatatt(final_attrs),
             'value': conditional_escape(force_unicode(value)),
             'id': final_attrs['id'],
-            'config': json_encode(self.config)
+            'config': json_encode(self.config),
+            'group': final_attrs['id'][0:pos],
+            'pos': pos,
             })
         )
